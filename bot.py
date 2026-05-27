@@ -19,7 +19,7 @@ from telegram.ext import (
     filters,
 )
 
-DB_NAME = "booking_v9_1.db"
+DB_NAME = "/data/booking_v9_1.db"
 MAX_BOOKINGS_PER_USER = 5
 LESSON_GOAL = 30
 ANTI_CANCEL_LIMIT = 3
