@@ -2194,7 +2194,7 @@ def main():
     init_db()
     cleanup_past_slots()
 
-    token = "8717130065:AAEP12STCKsoGcK4Ps8Yaw2ZLg6DlyaWq-4")
+    token = "8717130065:AAEP12STCKsoGcK4Ps8Yaw2ZLg6DlyaWq-4"
     if not token:
         raise RuntimeError("Не задан BOT_TOKEN")
 
