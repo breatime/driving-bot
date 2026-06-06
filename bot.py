@@ -2200,6 +2200,9 @@ def main():
 
     app = ApplicationBuilder().token(token).build()
 
+    app.add_handler(CommandHandler("quickslots", quickslots))
+app.add_handler(CommandHandler("genslots", genslots))
+    
     app.add_handler(ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
