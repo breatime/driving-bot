@@ -138,7 +138,6 @@ def db_execute(query, params=(), fetch=False, fetchone=False):
     conn = sqlite3.connect(DB_NAME, timeout=30)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=30000")
-
     cur = conn.cursor()
 
     try:
@@ -154,14 +153,15 @@ def db_execute(query, params=(), fetch=False, fetchone=False):
             conn.close()
             return result
 
+        affected = cur.rowcount
         conn.commit()
         conn.close()
+        return affected
 
     except Exception:
         conn.rollback()
         conn.close()
         raise
-
 
 # -----------------------------
 # HELPERS
@@ -690,7 +690,7 @@ def admin_book_manual_slot(slot_date: str, slot_time: str, full_name: str, phone
     phone = normalize_phone(phone)
     user_id = get_user_id_by_phone(phone)
     source = "bot" if user_id else "manual"
-    return db_execute("""
+    rows = db_execute("""
         UPDATE slots
         SET is_booked = 1,
             booked_by_user_id = ?,
@@ -706,7 +706,7 @@ def admin_book_manual_slot(slot_date: str, slot_time: str, full_name: str, phone
           AND slot_time = ?
           AND is_booked = 0
     """, (user_id, full_name, phone, source, slot_date, slot_time))
-
+    return rows
 
 def cancel_booking(slot_date: str, slot_time: str, user_id: int):
     return db_execute("""
