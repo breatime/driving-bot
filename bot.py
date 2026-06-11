@@ -135,24 +135,32 @@ def init_db():
 
 
 def db_execute(query, params=(), fetch=False, fetchone=False):
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME, timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+
     cur = conn.cursor()
-    cur.execute(query, params)
 
-    if fetchone:
-        row = cur.fetchone()
+    try:
+        cur.execute(query, params)
+
+        if fetchone:
+            result = cur.fetchone()
+            conn.close()
+            return result
+
+        if fetch:
+            result = cur.fetchall()
+            conn.close()
+            return result
+
+        conn.commit()
         conn.close()
-        return row
 
-    if fetch:
-        rows = cur.fetchall()
+    except Exception:
+        conn.rollback()
         conn.close()
-        return rows
-
-    affected = cur.rowcount
-    conn.commit()
-    conn.close()
-    return affected
+        raise
 
 
 # -----------------------------
