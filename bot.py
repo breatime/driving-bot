@@ -39,6 +39,7 @@ FIND_STUDENT_QUERY = 8
 MARKBOT_QUERY = 9
 ADD_PACK_TITLE = 10
 ADD_PACK_COUNT = 11
+GENSLOTS_INPUT = 12
 
 
 # -----------------------------
@@ -1709,12 +1710,19 @@ async def quickslots(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def genslots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("Команда только для администратора.")
-        return
-    context.user_data.clear()
-    context.user_data["awaiting_genslots"] = True
-    context.user_data["awaiting_quickslots"] = False
-    await update.message.reply_text("Отправь шаблон в 2 строки:\n\n1) Количество дней вперёд\n2) Время через запятую\n\nПример:\n14\n10:00, 12:00, 14:00, 16:00, 18:00\n\n⚠️ Слоты будут созданы только по будням.\nДля отмены режима: /cancel")
+        return ConversationHandler.END
 
+    await update.message.reply_text(
+        "Отправь шаблон в 2 строки:\n\n"
+        "1) Количество дней вперёд\n"
+        "2) Время через запятую\n\n"
+        "Пример:\n"
+        "14\n"
+        "10:00, 12:00, 14:00, 16:00, 18:00\n\n"
+        "⚠️ Слоты будут созданы только по будням.\n"
+        "Для отмены режима: /cancel"
+    )
+    return GENSLOTS_INPUT
 
 async def today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
@@ -2131,7 +2139,7 @@ async def genslots_text_flow(update: Update, context: ContextTypes.DEFAULT_TYPE)
             except sqlite3.IntegrityError:
                 skipped += 1
     await update.message.reply_text(f"✅ Сгенерировано слотов: {added}\n↪️ Пропущено существующих: {skipped}\n📅 Только будни", reply_markup=main_menu_keyboard())
-
+    return ConversationHandler.END
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -2201,7 +2209,17 @@ def main():
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("quickslots", quickslots))
-    app.add_handler(CommandHandler("genslots", genslots))
+   
+    app.add_handler(
+    ConversationHandler(
+        entry_points=[CommandHandler("genslots", genslots)],
+        states={
+            GENSLOTS_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, genslots_text_flow)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel_any)],
+        allow_reentry=True,
+    )
+)
     
     app.add_handler(ConversationHandler(
         entry_points=[CommandHandler("start", start)],
